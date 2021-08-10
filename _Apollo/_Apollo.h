@@ -16,3 +16,8 @@ FOUNDATION_EXPORT const unsigned char ApolloVersionString[];
 // In this header, you should import all the public headers of your framework using statements like #import <Apollo/PublicHeader.h>
 
 
+@interface _Apollo : NSObject
+
++ (nonnull NSArray<NSString *> *)getLoadProtectionLogs;
+@end
+

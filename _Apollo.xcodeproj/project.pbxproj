@@ -7,17 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4056ECBB26C27BAA0094E124 /* Core.h in Headers */ = {isa = PBXBuildFile; fileRef = 4056ECB926C27BAA0094E124 /* Core.h */; };
+		4056ECBC26C27BAA0094E124 /* Core.m in Sources */ = {isa = PBXBuildFile; fileRef = 4056ECBA26C27BAA0094E124 /* Core.m */; };
 		409EB74626C265F10063B70F /* _Apollo.h in Headers */ = {isa = PBXBuildFile; fileRef = 409EB74426C265F10063B70F /* _Apollo.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		409EB74E26C2661E0063B70F /* Apollo.h in Headers */ = {isa = PBXBuildFile; fileRef = 409EB74C26C2661E0063B70F /* Apollo.h */; };
-		409EB74F26C2661E0063B70F /* Apollo.m in Sources */ = {isa = PBXBuildFile; fileRef = 409EB74D26C2661E0063B70F /* Apollo.m */; };
+		40CD0ADC26C27644002DDD75 /* _Apollo.m in Sources */ = {isa = PBXBuildFile; fileRef = 40CD0ADB26C27644002DDD75 /* _Apollo.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4056ECB926C27BAA0094E124 /* Core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Core.h; sourceTree = "<group>"; };
+		4056ECBA26C27BAA0094E124 /* Core.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Core.m; sourceTree = "<group>"; };
 		409EB74126C265F10063B70F /* _Apollo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = _Apollo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		409EB74426C265F10063B70F /* _Apollo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _Apollo.h; sourceTree = "<group>"; };
 		409EB74526C265F10063B70F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		409EB74C26C2661E0063B70F /* Apollo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Apollo.h; sourceTree = "<group>"; };
-		409EB74D26C2661E0063B70F /* Apollo.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Apollo.m; sourceTree = "<group>"; };
+		40CD0ADB26C27644002DDD75 /* _Apollo.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = _Apollo.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,9 +53,10 @@
 			isa = PBXGroup;
 			children = (
 				409EB74426C265F10063B70F /* _Apollo.h */,
+				40CD0ADB26C27644002DDD75 /* _Apollo.m */,
+				4056ECB926C27BAA0094E124 /* Core.h */,
+				4056ECBA26C27BAA0094E124 /* Core.m */,
 				409EB74526C265F10063B70F /* Info.plist */,
-				409EB74C26C2661E0063B70F /* Apollo.h */,
-				409EB74D26C2661E0063B70F /* Apollo.m */,
 			);
 			path = _Apollo;
 			sourceTree = "<group>";
@@ -66,7 +69,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				409EB74626C265F10063B70F /* _Apollo.h in Headers */,
-				409EB74E26C2661E0063B70F /* Apollo.h in Headers */,
+				4056ECBB26C27BAA0094E124 /* Core.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,7 +140,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				409EB74F26C2661E0063B70F /* Apollo.m in Sources */,
+				40CD0ADC26C27644002DDD75 /* _Apollo.m in Sources */,
+				4056ECBC26C27BAA0094E124 /* Core.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -282,6 +286,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.x.x.ff.Hermes;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -306,6 +311,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.x.x.ff.Hermes;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SUPPORTS_MACCATALYST = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

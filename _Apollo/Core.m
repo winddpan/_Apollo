@@ -1,35 +1,47 @@
 //
 //  Core.m
-//  Apollo
+//  _Apollo
 //
 //  Created by PAN on 2021/8/10.
 //
 
-#import "Apollo.h"
+#import "Core.h"
 #import <objc/runtime.h>
 #import <mach-o/dyld.h>
 
-@interface Apollo ()
-@property (nonatomic, copy) void (^logBlock)(NSArray<NSString *> *);
-@end
+void _loadReplacement(id self, SEL cmd)
+{
+    NSString *key = NSStringFromClass([self class]);
+    NSString *image = [[[Core shared] imageMap] valueForKey:key];
+    if (image != nil) {
+        NSString *log = [NSString stringWithFormat:@"%@ - %@", [self class], image];
+        [[[Core shared] logs] addObject:log];
+    }
+}
 
-@implementation Apollo
+
+@implementation Core
 
 + (id)shared {
-    static Apollo *shared = nil;
+    static Core *shared = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         shared = [[self alloc] init];
+        shared.logs = [NSMutableArray new];
+        shared.imageMap = [NSMutableDictionary new];
     });
     return shared;
 }
 
-+ (void)onPorectedLog:(void (^)(NSArray<NSString *> *))block {
-    [[Apollo shared] setLogBlock:block];
-}
-
 + (void)load {
-    [Apollo protectDylibImageLoad];
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [Core protectDylibImageLoad];
+        
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [[Core shared] setImageMap:nil];
+        });
+    });
 }
 
 + (void)protectDylibImageLoad {
@@ -44,6 +56,7 @@
             classes = objc_copyClassNamesForImage(image_name, &classCount);
             for (int i = 0; i < classCount; i++) {
                 Class clz = objc_getClass(classes[i]);
+                [[[Core shared] imageMap] setValue:imageName forKey:NSStringFromClass(clz)];
                 [self protectClassLoad:clz];
             }
             free(classes);
@@ -54,19 +67,10 @@
 + (void)protectClassLoad:(Class)clz {
     if ([clz respondsToSelector:@selector(load)]) {
         Method originalMethod = class_getClassMethod(clz, @selector(load));
-        Method swizzledMethod = class_getClassMethod(Apollo.class, @selector(loadReplacement));
+        const char *types = method_getTypeEncoding(originalMethod);
+        class_addMethod(clz, NSSelectorFromString(@"loadReplacement"), (IMP)_loadReplacement, types);
+        Method swizzledMethod = class_getInstanceMethod(clz, NSSelectorFromString(@"loadReplacement"));
         method_exchangeImplementations(originalMethod, swizzledMethod);
-    }
-    if ([clz respondsToSelector:@selector(initialize)]) {
-        Method originalMethod = class_getClassMethod(clz, @selector(initialize));
-        Method swizzledMethod = class_getClassMethod(Apollo.class, @selector(loadReplacement));
-        method_exchangeImplementations(originalMethod, swizzledMethod);
-    }
-}
-
-+ (void)loadReplacement {
-    if ([[Apollo shared] logBlock] != nil) {
-        [[Apollo shared] logBlock]([NSThread callStackSymbols]);
     }
 }
 
