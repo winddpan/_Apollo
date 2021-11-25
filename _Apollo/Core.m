@@ -36,11 +36,12 @@ void _loadReplacement(id self, SEL cmd)
 + (void)load {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        [Core protectDylibImageLoad];
-        
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [[Core shared] setImageMap:nil];
-        });
+        if ([Core detectedIfProtect]) {
+            [Core protectDylibImageLoad];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [[Core shared] setImageMap:nil];
+            });
+        }
     });
 }
 
@@ -72,6 +73,17 @@ void _loadReplacement(id self, SEL cmd)
         Method swizzledMethod = class_getInstanceMethod(clz, NSSelectorFromString(@"loadReplacement"));
         method_exchangeImplementations(originalMethod, swizzledMethod);
     }
+}
+
+// 十分之一的几率不保护
++ (BOOL)detectedIfProtect {
+    NSInteger random = [[NSUserDefaults standardUserDefaults] integerForKey:@"_Apollo"];
+    if (random <= 0) {
+        // 1 ... 10
+        random = arc4random() % 10 + 1;
+        [[NSUserDefaults standardUserDefaults] setInteger:random forKey:@"_Apollo"];
+    }
+    return random > 1;
 }
 
 @end
