@@ -75,15 +75,21 @@ void _loadReplacement(id self, SEL cmd)
     }
 }
 
-// 十分之一的几率不保护
+// 保护几率 (0% ... 100%)
 + (BOOL)detectedIfProtect {
-    NSInteger random = [[NSUserDefaults standardUserDefaults] integerForKey:@"_Apollo"];
-    if (random <= 0) {
-        // 1 ... 10
-        random = arc4random() % 10 + 1;
-        [[NSUserDefaults standardUserDefaults] setInteger:random forKey:@"_Apollo"];
+    NSDictionary *infoPlist = [[NSBundle mainBundle] infoDictionary];
+    float proectPercent = [[infoPlist objectForKey:@"ApolloPercent"] floatValue];
+    if (proectPercent <= 0) {
+        proectPercent = 0.9;
+    } else if (proectPercent > 1) {
+        proectPercent = 1;
     }
-    return random > 1;
+    NSInteger random = [[NSUserDefaults standardUserDefaults] integerForKey:@"ApolloRandom"];
+    if (random <= 0) {
+        random = arc4random() % 100;
+        [[NSUserDefaults standardUserDefaults] setInteger:random forKey:@"ApolloRandom"];
+    }
+    return random < (int)(proectPercent * 100);
 }
 
 @end
