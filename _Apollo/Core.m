@@ -80,7 +80,7 @@ void _loadReplacement(id self, SEL cmd)
     NSDictionary *infoPlist = [[NSBundle mainBundle] infoDictionary];
     float proectPercent = [[infoPlist objectForKey:@"ApolloPercent"] floatValue];
     if (proectPercent <= 0) {
-        proectPercent = 0.9;
+        proectPercent = 0;
     } else if (proectPercent > 1) {
         proectPercent = 1;
     }
