@@ -7,6 +7,7 @@
 
 #import "Core.h"
 #import <objc/runtime.h>
+#import <dlfcn.h>
 #import <mach-o/dyld.h>
 
 void _loadReplacement(id self, SEL cmd)
@@ -19,6 +20,42 @@ void _loadReplacement(id self, SEL cmd)
     }
 }
 
+static uintptr_t firstCmdAfterHeader(const struct mach_header* const header) {
+    switch(header->magic) {
+        case MH_MAGIC:
+        case MH_CIGAM:
+            return (uintptr_t)(header + 1);
+        case MH_MAGIC_64:
+        case MH_CIGAM_64:
+            return (uintptr_t)(((struct mach_header_64*)header) + 1);
+        default:
+            return 0;
+    }
+}
+
+/* Verify that address + offset + length is within bounds. */
+static const void *macho_offset (const void *address, size_t offset) {
+    void *result = ((uint8_t *) address) + offset;
+    return result;
+}
+
+static const char *fullfilPath(const char* path) {
+    NSString *mainBundlePath = [NSBundle mainBundle].bundlePath;
+    if (strstr(path, "@executable_path")) {
+        NSString *n = [[NSString stringWithFormat:@"%s", path] stringByReplacingOccurrencesOfString:@"@executable_path" withString:mainBundlePath];
+        return [n UTF8String];
+    }
+    if (strstr(path, "@rpath")) {
+        NSString *r = [NSString stringWithFormat:@"%@/Frameworks", mainBundlePath];
+        NSString *n = [[NSString stringWithFormat:@"%s", path] stringByReplacingOccurrencesOfString:@"@rpath" withString:r];
+        return [n UTF8String];
+    }
+    if (strstr(path, "@loader_path")) {
+        NSString *n = [[NSString stringWithFormat:@"%s", path] stringByReplacingOccurrencesOfString:@"@loader_path" withString:mainBundlePath];
+        return [n UTF8String];
+    }
+    return NULL;;
+}
 
 @implementation Core
 
@@ -37,7 +74,7 @@ void _loadReplacement(id self, SEL cmd)
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         if ([Core detectedIfProtect]) {
-            [Core protectDylibImageLoad];
+            [Core go];
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [[Core shared] setImageMap:nil];
             });
@@ -45,24 +82,53 @@ void _loadReplacement(id self, SEL cmd)
     });
 }
 
-+ (void)protectDylibImageLoad {
+
++ (void)go {
     NSString *mainBundlePath = [NSBundle mainBundle].bundlePath;
-    uint32_t c = _dyld_image_count();
-    for(uint32_t i = 0; i < c; ++i) {
-        const char *image_name = _dyld_get_image_name(i);
-        NSString *imageName = [NSString stringWithFormat:@"%s", image_name];
-        if ([imageName hasPrefix:mainBundlePath] && [[imageName lowercaseString] hasSuffix:@".dylib"]) {
-            unsigned int classCount;
-            const char **classes;
-            classes = objc_copyClassNamesForImage(image_name, &classCount);
-            for (int i = 0; i < classCount; i++) {
-                Class clz = objc_getClass(classes[i]);
-                [[[Core shared] imageMap] setValue:imageName forKey:NSStringFromClass(clz)];
-                [self protectClassLoad:clz];
+    const struct mach_header* header = _dyld_get_image_header(0);
+    if (header == NULL) {
+        return;
+    }
+    uintptr_t cmdPtr = firstCmdAfterHeader(header);
+    if (cmdPtr == 0) {
+        return;
+    }
+    bool after_signature = false;
+    for(uint32_t iCmd = 0; iCmd < header->ncmds; iCmd++) {
+        struct load_command* lc = (struct load_command*)cmdPtr;
+        cmdPtr += lc->cmdsize;
+        if (lc->cmd == LC_CODE_SIGNATURE) {
+            after_signature = true;
+        }
+        if (after_signature) {
+            if (lc->cmd == LC_LOAD_DYLIB || lc->cmd == LC_LOAD_WEAK_DYLIB) {
+                struct dylib_command *dylib_cmd = (struct dylib_command *)lc;
+                size_t namelen = lc->cmdsize - sizeof(struct dylib_command);
+                const void *nameptr = macho_offset(dylib_cmd, sizeof(struct dylib_command));
+                if (nameptr == NULL) continue;
+                char *name = malloc(namelen);
+                strlcpy(name, nameptr, namelen);
+                name = fullfilPath(name);
+                if (name) {
+                    [self protectImageName:name];
+                }
             }
-            free(classes);
         }
     }
+}
+
++ (void)protectImageName:(const char *)image_name {
+    unsigned int classCount;
+    const char **classes;
+    classes = objc_copyClassNamesForImage(image_name, &classCount);
+    for (int i = 0; i < classCount; i++) {
+        Class clz = objc_getClass(classes[i]);
+        [[[Core shared] imageMap] setValue:[NSString stringWithFormat:@"%s", image_name] forKey:NSStringFromClass(clz)];
+        [self protectClassLoad:clz];
+    }
+    free(classes);
+    
+    NSLog(@"LC_LOAD_DYLIB %s %d", image_name, classCount);
 }
 
 + (void)protectClassLoad:(Class)clz {
