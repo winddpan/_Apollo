@@ -18,5 +18,6 @@ Pod::Spec.new do |s|
 
   s.source          = { :git => "https://github.com/winddpan/_Apollo.git" }
   s.source_files    = "_Apollo/*.{h,m}"
+  s.vendored_frameworks = "_Apollo/JSAspect.framework"
   s.requires_arc    = true
 end
